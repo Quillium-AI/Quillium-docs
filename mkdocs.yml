@@ -2,6 +2,11 @@ site_name: Quillum Docs
 
 nav:
   - Home: index.md
+  - Backend:
+    - Overview: backend/index.md
+    - Testing:
+      - Overview: backend/testing/index.md
+      - Integration Tests: backend/testing/integration_tests.md
 
 theme:
   name: 'material'
