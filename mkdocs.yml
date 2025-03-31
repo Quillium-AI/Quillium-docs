@@ -4,9 +4,14 @@ nav:
   - Home: index.md
   - Backend:
     - Overview: backend/index.md
+    - Architecture: backend/architecture/index.md
+    - API Reference: backend/api/index.md
+    - Authentication: backend/authentication/index.md
+    - Database Schema: backend/database/index.md
     - Testing:
       - Overview: backend/testing/index.md
       - Integration Tests: backend/testing/integration_tests.md
+    - Deployment: backend/deployment/index.md
 
 theme:
   name: 'material'
