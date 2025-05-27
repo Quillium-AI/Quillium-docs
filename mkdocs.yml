@@ -8,19 +8,19 @@ nav:
     - API Reference: backend/api/index.md
     - Authentication: backend/authentication/index.md
     - Database Schema: backend/database/index.md
-    - Crawler:
-      - Overview: backend/crawler/index.md
-      - Architecture: backend/crawler/architecture.md
-      - Configuration: backend/crawler/configuration.md
-      - Anti-Bot Measures: backend/crawler/anti-bot.md
-      - Elasticsearch Integration: backend/crawler/elasticsearch.md
-      - URL Deduplication: backend/crawler/deduplication.md
-      - Metrics: backend/crawler/metrics.md
-      - API: backend/crawler/api.md
     - Testing:
       - Overview: backend/testing/index.md
       - Integration Tests: backend/testing/integration_tests.md
     - Deployment: backend/deployment/index.md
+  - Crawler:
+    - Overview: crawler/index.md
+    - Architecture: crawler/architecture.md
+    - Configuration: crawler/configuration.md
+    - Anti-Bot Measures: crawler/anti-bot.md
+    - Elasticsearch Integration: crawler/elasticsearch.md
+    - URL Deduplication: crawler/deduplication.md
+    - Metrics: crawler/metrics.md
+    - API: crawler/api.md
 
 theme:
   name: 'material'
