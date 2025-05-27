@@ -12,14 +12,7 @@ The API server provides a RESTful interface for:
 
 ## Configuration
 
-The API server is automatically started when the crawler runs. By default, it listens on port 8080, but this can be configured in the code:
-
-```go
-// Start API server
-if err := api.StartServer(":8080"); err != nil {
-    log.Fatalf("Failed to start server: %v", err)
-}
-```
+The API server is automatically started when the crawler runs. By default, it listens on port 8080.
 
 ## Available Endpoints
 
@@ -79,73 +72,9 @@ GET /metrics
 
 Returns Prometheus-compatible metrics for the crawler. This endpoint is automatically provided by the Prometheus client library when metrics are enabled.
 
-## Implementation Details
+## API Server
 
-The API server is implemented in the `api` package using the standard Go HTTP server:
-
-```go
-func StartServer(addr string) error {
-    mux := http.NewServeMux()
-    SetupRoutes(mux)
-
-    log.Printf("Starting server on %s", addr)
-    return http.ListenAndServe(addr, mux)
-}
-```
-
-The routes are set up in a separate function:
-
-```go
-func SetupRoutes(mux *http.ServeMux) {
-    // Health and system endpoints
-    mux.HandleFunc("/livez", livezHandler)
-    mux.HandleFunc("/readyz", readyzHandler)
-    mux.HandleFunc("/version", versionHandler)
-
-    // Metrics endpoint
-    mux.Handle("/metrics", promhttp.Handler())
-}
-```
-
-### Route Handlers
-
-#### Health Check Handlers
-
-The health check handlers provide simple status responses:
-
-```go
-func livezHandler(w http.ResponseWriter, r *http.Request) {
-    w.Header().Set("Content-Type", "application/json")
-    response := map[string]string{
-        "status": "ok",
-    }
-    json.NewEncoder(w).Encode(response)
-    log.Println("Live check request received")
-}
-
-func readyzHandler(w http.ResponseWriter, r *http.Request) {
-    w.Header().Set("Content-Type", "application/json")
-    response := map[string]string{
-        "status": "ok",
-    }
-    json.NewEncoder(w).Encode(response)
-    log.Println("Ready check request received")
-}
-```
-
-#### Version Handler
-
-The version handler returns the current version of the crawler:
-
-```go
-func versionHandler(w http.ResponseWriter, r *http.Request) {
-    w.Header().Set("Content-Type", "application/json")
-    response := map[string]string{
-        "version": "0.1.0",
-    }
-    json.NewEncoder(w).Encode(response)
-}
-```
+The API server is automatically started when the crawler runs and listens on port 8080 by default. It provides several endpoints for monitoring and health checks that are particularly useful in containerized environments like Kubernetes.
 
 ## Using the API
 
