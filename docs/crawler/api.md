@@ -1,15 +1,14 @@
 # Crawler API
 
-The Quillium-Crawler includes an API server that provides HTTP endpoints for controlling and monitoring the crawler. This document explains the available endpoints and how to use them.
+The Quillium-Crawler includes an API server that provides HTTP endpoints for health checks, version information, and metrics. This document explains the available endpoints and how to use them.
 
 ## Overview
 
 The API server provides a RESTful interface for:
 
-- Starting and stopping crawlers
-- Checking crawler status
-- Retrieving crawled data
-- Accessing metrics
+- Health and readiness checks
+- Version information
+- Prometheus metrics
 
 ## Configuration
 
@@ -24,86 +23,51 @@ if err := api.StartServer(":8080"); err != nil {
 
 ## Available Endpoints
 
-### Status Endpoint
+### Health Check Endpoint
 
 ```
-GET /status
+GET /livez
 ```
 
-Returns the current status of all crawler instances, including:
-
-- Crawler ID
-- Start URL
-- Running status
-- Pages crawled
-- Errors encountered
+Returns the liveness status of the crawler service. This endpoint is used by container orchestration systems like Kubernetes to determine if the service is alive.
 
 #### Example Response
 
 ```json
 {
-  "crawlers": [
-    {
-      "id": "crawler_1",
-      "start_url": "https://example.com",
-      "running": true,
-      "pages_crawled": 157,
-      "errors": 12
-    },
-    {
-      "id": "crawler_2",
-      "start_url": "https://example2.com",
-      "running": true,
-      "pages_crawled": 83,
-      "errors": 5
-    }
-  ]
+  "status": "ok"
 }
 ```
 
-### Start Crawler Endpoint
+### Readiness Check Endpoint
 
 ```
-POST /crawler/{id}/start
+GET /readyz
 ```
 
-Starts a crawler with the specified ID.
-
-#### Example Request
-
-```
-POST /crawler/crawler_1/start
-```
+Returns the readiness status of the crawler service. This endpoint is used by container orchestration systems to determine if the service is ready to accept traffic.
 
 #### Example Response
 
 ```json
 {
-  "status": "success",
-  "message": "Crawler crawler_1 started"
+  "status": "ok"
 }
 ```
 
-### Stop Crawler Endpoint
+### Version Endpoint
 
 ```
-POST /crawler/{id}/stop
+GET /version
 ```
 
-Stops a crawler with the specified ID.
-
-#### Example Request
-
-```
-POST /crawler/crawler_1/stop
-```
+Returns the current version of the crawler service.
 
 #### Example Response
 
 ```json
 {
-  "status": "success",
-  "message": "Crawler crawler_1 stopped"
+  "version": "0.1.0"
 }
 ```
 
@@ -121,104 +85,92 @@ The API server is implemented in the `api` package using the standard Go HTTP se
 
 ```go
 func StartServer(addr string) error {
-    // Register routes
-    http.HandleFunc("/status", statusHandler)
-    http.HandleFunc("/crawler/", crawlerHandler)
+    mux := http.NewServeMux()
+    SetupRoutes(mux)
 
-    // Start server
-    log.Printf("Starting API server on %s", addr)
-    return http.ListenAndServe(addr, nil)
+    log.Printf("Starting server on %s", addr)
+    return http.ListenAndServe(addr, mux)
+}
+```
+
+The routes are set up in a separate function:
+
+```go
+func SetupRoutes(mux *http.ServeMux) {
+    // Health and system endpoints
+    mux.HandleFunc("/livez", livezHandler)
+    mux.HandleFunc("/readyz", readyzHandler)
+    mux.HandleFunc("/version", versionHandler)
+
+    // Metrics endpoint
+    mux.Handle("/metrics", promhttp.Handler())
 }
 ```
 
 ### Route Handlers
 
-#### Status Handler
+#### Health Check Handlers
 
-The status handler retrieves the status of all crawler instances from the crawler manager:
+The health check handlers provide simple status responses:
 
 ```go
-func statusHandler(w http.ResponseWriter, r *http.Request) {
-    // Get status from crawler manager
-    status := manager.GetStatus()
-
-    // Return as JSON
+func livezHandler(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(status)
+    response := map[string]string{
+        "status": "ok",
+    }
+    json.NewEncoder(w).Encode(response)
+    log.Println("Live check request received")
+}
+
+func readyzHandler(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Content-Type", "application/json")
+    response := map[string]string{
+        "status": "ok",
+    }
+    json.NewEncoder(w).Encode(response)
+    log.Println("Ready check request received")
 }
 ```
 
-#### Crawler Handler
+#### Version Handler
 
-The crawler handler processes requests to start and stop specific crawler instances:
+The version handler returns the current version of the crawler:
 
 ```go
-func crawlerHandler(w http.ResponseWriter, r *http.Request) {
-    // Extract crawler ID from URL
-    parts := strings.Split(r.URL.Path, "/")
-    if len(parts) < 3 {
-        http.Error(w, "Invalid request", http.StatusBadRequest)
-        return
+func versionHandler(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Content-Type", "application/json")
+    response := map[string]string{
+        "version": "0.1.0",
     }
-
-    crawlerID := parts[2]
-    action := ""
-    if len(parts) >= 4 {
-        action = parts[3]
-    }
-
-    // Process action
-    switch action {
-    case "start":
-        if err := manager.StartCrawler(crawlerID); err != nil {
-            http.Error(w, err.Error(), http.StatusInternalServerError)
-            return
-        }
-        json.NewEncoder(w).Encode(map[string]string{
-            "status":  "success",
-            "message": fmt.Sprintf("Crawler %s started", crawlerID),
-        })
-
-    case "stop":
-        if err := manager.StopCrawler(crawlerID); err != nil {
-            http.Error(w, err.Error(), http.StatusInternalServerError)
-            return
-        }
-        json.NewEncoder(w).Encode(map[string]string{
-            "status":  "success",
-            "message": fmt.Sprintf("Crawler %s stopped", crawlerID),
-        })
-
-    default:
-        http.Error(w, "Invalid action", http.StatusBadRequest)
-    }
+    json.NewEncoder(w).Encode(response)
 }
 ```
 
 ## Using the API
 
-### Checking Crawler Status
+### Checking Health Status
 
-You can check the status of all crawlers using curl:
+You can check the health status using curl:
 
 ```bash
-curl http://localhost:8080/status
+curl http://localhost:8080/livez
 ```
 
-### Starting a Crawler
+### Checking Readiness Status
 
-To start a specific crawler:
+To check if the service is ready:
 
 ```bash
-curl -X POST http://localhost:8080/crawler/crawler_1/start
+curl http://localhost:8080/readyz
 ```
 
-### Stopping a Crawler
+### Getting Version Information
 
-To stop a specific crawler:
+To get the current version:
 
 ```bash
-curl -X POST http://localhost:8080/crawler/crawler_1/stop
+curl http://localhost:8080/version
 ```
 
 ### Accessing Metrics
